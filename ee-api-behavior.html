@@ -1,0 +1,253 @@
+<link rel="import" href="ee-model-behavior.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<script>
+  ApiBehaviorImpl = {
+
+    properties: {
+
+      initialized: {
+        type: Boolean,
+        value: false
+      },
+
+      url: {
+        type: String,
+        value: ''
+      },
+
+      contentType: {
+        type: String,
+        value: 'application/json'
+      },
+
+      withCredentials: {
+        type: Boolean,
+        value: false
+      },
+
+      headers: {
+        type: Object,
+        value: function() { return {}; }
+      },
+
+      data: String,
+
+      liveData: {
+        type: Object,
+        observer: '_dataChanged'
+      },
+
+      persistedData: {
+        type: Object,
+        value: function() { return {}; },
+        observer: '_dataChanged'
+      },
+
+      item: {
+        type: Object,
+        value: function() { return {}; }
+      },
+
+      requestGet: {
+        type: Object,
+      },
+
+      requestPut: {
+        type: Object,
+      },
+
+      requestPost: {
+        type: Object,
+      },
+
+      requestDel: {
+        type: Object,
+      },
+
+      lastPutResponse: {
+        type: Object,
+        value: function() { return {}; },
+        observer: '_dataChanged'
+      },
+
+      lastPostResponse: {
+        type: Object,
+        value: function() { return {}; },
+        observer: '_dataChanged'
+      },
+
+      lastDelResponse: {
+        type: Object,
+        value: function() { return {}; },
+        observer: '_dataChanged'
+      },
+
+      includeAuthToken: {
+        type: Boolean,
+        value: true,
+      },
+
+      tokenCookieName: {
+        type: String,
+        value: 'sessionelf'
+      },
+    },
+
+    _dataChanged: function() {
+      // abstract
+    },
+
+    _computeData: function(data) {
+      return data;
+    },
+
+    _configureAjax: function(request) {
+      request.url = this.url;
+      request.body = this.item;
+      request.contentType = this.contentType;
+      request.withCredentials = this.withCredentials;
+      request.headers = this.headers;
+
+      if (this.includeAuthToken) {
+        var value = this._readCookie(this.tokenCookieName);
+        if (!value) {
+          return this.loginRedirect();
+        }
+        var header = '{"Authorization": "Token' + value + '"}';
+        var authHeader = {
+              'Authorization': 'Token ' + value,
+              'Access-Control-Allow-Credentials': 'true'
+            };
+        request.headers = _.extend(this.headers, authHeader);
+      }
+    },
+
+    loginRedirect: function() {
+      window.location.replace(this.LOGIN_URL);
+    },
+
+    _initIronAjax: function() {
+      if (this.initialized) {
+        return;
+      }
+
+      this.requestGet = document.createElement('iron-ajax');
+      this.requestGet.method = 'GET';
+      this.requestGet.addEventListener('response', this._getResponded.bind(this));
+      this.requestGet.addEventListener('error', this._getRespondedWithError.bind(this));
+
+      this.requestPut = document.createElement('iron-ajax');
+      this.requestPut.method = 'PUT';
+      this.requestPut.addEventListener('response', this._putResponded.bind(this));
+      this.requestPut.addEventListener('error', this._putRespondedWithError.bind(this));
+
+      this.requestPost = document.createElement('iron-ajax');
+      this.requestPost.method = 'POST';
+      this.requestPost.addEventListener('response', this._postResponded.bind(this));
+      this.requestPost.addEventListener('error', this._postRespondedWithError.bind(this));
+
+      this.requestDel = document.createElement('iron-ajax');
+      this.requestDel.method = 'DELETE';
+      this.requestDel.addEventListener('response', this._delResponded.bind(this));
+      this.requestDel.addEventListener('error', this._delRespondedWithError.bind(this));
+
+      this.initialized = true;
+    },
+
+    get: function() {
+      this._initIronAjax();
+      this._configureAjax(this.requestGet);
+      this.requestGet.generateRequest();
+    },
+
+
+    put: function() {
+      this._initIronAjax();
+      this._configureAjax(this.requestPut);
+      this.requestPut.generateRequest();
+    },
+
+    post: function() {
+      this._initIronAjax();
+      this._configureAjax(this.requestPost);
+      this.requestPost.generateRequest();
+    },
+
+    del: function() {
+      this._configureAjax(this.requestDel);
+      this.requestDel.generateRequest();
+    },
+
+    _getResponded: function(e) {
+      this.set('liveData', e.detail.response);
+      this.fire('get-responded', e.detail.response);
+    },
+
+    _getRespondedWithError: function(e) {
+      this.fire('get-error', e);
+      this._handeleError(e);
+    },
+
+    _postResponded: function(e) {
+      this.lastPostResponse = e.detail.response;
+      this.fire('post-responded', e.detail.response);
+    },
+
+    _postRespondedWithError: function(e) {
+      this.fire('post-error', e);
+      this._handeleError(e);
+    },
+
+    _putResponded: function(e) {
+      this.lastPostResponse = e.detail.response;
+      this.fire('put-responded', e.detail.response);
+    },
+
+    _putRespondedWithError: function(e) {
+      this.fire('put-error', e);
+      this._handeleError(e);
+    },
+
+    _delResponded: function(e) {
+      this.lastDelResponse = e.detail.response;
+      this.fire('del-responded', e.detail.response);
+    },
+
+    _delRespondedWithError: function(e) {
+      this.fire('del-error', e);
+      this._handeleError(e);
+    },
+
+    _handeleError: function(e) {
+      this.fire('error', e);
+      console.error('Request failed.');
+      if (e.detail.status === 401) {
+        this.loginRedirect();
+      }
+    },
+
+    _readCookie: function(name) {
+      var i = name + '=';
+      var c = name + '=';
+      var ca = name + '=';
+      var nameEQ = name + '=';
+      ca = document.cookie.split(';');
+      for (i = 0; i < ca.length; i++) {
+        c = ca[i];
+        while (c.charAt(0) === ' ') {
+          c = c.substring(1,c.length);
+        }
+        if (c.indexOf(nameEQ) === 0) {
+          return c.substring(nameEQ.length,c.length);
+        }
+      }
+      return '';
+    }
+  };
+
+  EEApiBehavior = [
+    ApiBehaviorImpl,
+    ModelBehavior
+  ];
+</script>
