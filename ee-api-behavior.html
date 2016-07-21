@@ -117,7 +117,8 @@
       if (this.includeAuthToken) {
         var value = this._readCookie(this.tokenCookieName);
         if (!value) {
-          return this.loginRedirect();
+          this.loginRedirect();
+          return false;
         }
         var header = '{"Authorization": "Token' + value + '"}';
         var authHeader = {
@@ -126,6 +127,7 @@
             };
         request.headers = _.extend(this.headers, authHeader);
       }
+      return true;
     },
 
     loginRedirect: function() {
@@ -162,26 +164,30 @@
 
     get: function() {
       this._initIronAjax();
-      this._configureAjax(this.requestGet);
-      this.requestGet.generateRequest();
+      if (this._configureAjax(this.requestGet)) {
+        this.requestGet.generateRequest();
+      }
     },
 
 
     put: function() {
       this._initIronAjax();
-      this._configureAjax(this.requestPut);
-      this.requestPut.generateRequest();
+      if (this._configureAjax(this.requestPut)){
+        this.requestPut.generateRequest();
+      }
     },
 
     post: function() {
       this._initIronAjax();
-      this._configureAjax(this.requestPost);
-      this.requestPost.generateRequest();
+      if (this._configureAjax(this.requestPost)){
+        this.requestPost.generateRequest();
+      }
     },
 
     del: function() {
-      this._configureAjax(this.requestDel);
-      this.requestDel.generateRequest();
+      if (this._configureAjax(this.requestDel)){
+        this.requestDel.generateRequest();
+      }
     },
 
     _getResponded: function(e) {
