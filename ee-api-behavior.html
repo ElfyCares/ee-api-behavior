@@ -11,6 +11,16 @@
         value: '/'
       },
 
+      DEVELOPMENT_API_BASE_URL: {
+        type: String,
+        value: '/api/'
+      },
+
+      PRODUCTION_API_BASE_URL: {
+        type: String,
+        value: '/api/'
+      },
+
       initialized: {
         type: Boolean,
         value: false
@@ -108,7 +118,15 @@
     },
 
     _configureAjax: function(request) {
-      request.url = this.url;
+      var is_production = (window.location.port === '');
+      var full_url = ''
+      if (is_production) {
+        full_url = this.PRODUCTION_API_BASE_URL + this.url;
+      } else {
+        full_url = this.DEVELOPMENT_API_BASE_URL + this.url;
+      }
+
+      request.url = full_url;
       request.body = this.item;
       request.contentType = this.contentType;
       request.withCredentials = this.withCredentials;
