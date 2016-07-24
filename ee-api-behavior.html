@@ -107,6 +107,11 @@
         type: String,
         value: 'sessionelf'
       },
+
+      tokenCookie: {
+        type: String,
+        value: ''
+      },
     },
 
     _dataChanged: function() {
@@ -138,6 +143,7 @@
           this.loginRedirect();
           return false;
         }
+        this.tokenCookie = value;
         var header = '{"Authorization": "Token' + value + '"}';
         var authHeader = {
               'Authorization': 'Token ' + value,
